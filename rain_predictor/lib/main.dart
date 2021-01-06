@@ -1,13 +1,60 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-void main() {
-  runApp(MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  const AndroidInitializationSettings initializationSettingsAndroid =
+  AndroidInitializationSettings('@mipmap/ic_launcher');
+  final InitializationSettings initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid);
+  await flutterLocalNotificationsPlugin.initialize(
+    initializationSettings,
+    onSelectNotification: selectNotification,
+  );
+
+  const androidPlatformChannelSpecifics = AndroidNotificationDetails(
+    channel,
+    channel_name,
+    channel_description,
+    importance: Importance.low,
+    priority: Priority.defaultPriority,
+    showWhen: false,
+  );
+  const platformChannelSpecifics = NotificationDetails(
+    android: androidPlatformChannelSpecifics,
+  );
+
+  runApp(MyApp(flutterLocalNotificationsPlugin, platformChannelSpecifics));
+}
+
+Future selectNotification(String payload) async {
+  if (payload != null) {
+    debugPrint('notification payload: $payload');
+  }
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
+  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin;
+  final NotificationDetails _platformChannelSpecifics;
+
+  const MyApp(this._flutterLocalNotificationsPlugin, this._platformChannelSpecifics);
+
+  void _notif() async {
+    await _flutterLocalNotificationsPlugin.show(
+      id,
+      'Llueve el miercoles',
+      'plain body',
+      _platformChannelSpecifics,
+      payload: 'item x',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    _notif();
+
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
@@ -26,13 +73,24 @@ class MyApp extends StatelessWidget {
         // closer together (more dense) than on mobile platforms.
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(
+          _flutterLocalNotificationsPlugin,
+          _platformChannelSpecifics,
+          title: 'Flutter Demo Home Page',
+      ),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
+  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin;
+  final NotificationDetails _platformChannelSpecifics;
+
+  MyHomePage(
+      this._flutterLocalNotificationsPlugin,
+      this._platformChannelSpecifics,
+      {Key key, this.title}
+      ) : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -46,22 +104,21 @@ class MyHomePage extends StatefulWidget {
   final String title;
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  _MyHomePageState createState() => _MyHomePageState(_flutterLocalNotificationsPlugin, _platformChannelSpecifics);
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+const String channel = "SINGLE";
+const String channel_name = "Default channel";
+const String channel_description = "Single channel";
+const int id = 0;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+class _MyHomePageState extends State<MyHomePage> {
+  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin;
+  final NotificationDetails _platformChannelSpecifics;
+
+  _MyHomePageState(this._flutterLocalNotificationsPlugin, this._platformChannelSpecifics) : super();
+
+  int _counter = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -107,11 +164,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
