@@ -5,6 +5,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:android_alarm_manager/android_alarm_manager.dart';
 
 import 'package:rain_predictor/forecast.dart';
 
@@ -14,37 +15,53 @@ const String channel = "SINGLE";
 const String channel_name = "Default channel";
 const String channel_description = "Single channel";
 const int id = 0;
+final int alarmId = 0;
+
+final notificationSpecifics = getNotificationsSpecifics();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await AndroidAlarmManager.initialize();
+
+  await AndroidAlarmManager.periodic(
+    const Duration(hours: 3),
+    alarmId,
+    notify,
+  );
+
+  runApp(MyApp(await initNotificationsPlugin(), notificationSpecifics));
+}
+
+void notify() async {
+  notif(await initNotificationsPlugin(), notificationSpecifics);
+}
+
+Future<FlutterLocalNotificationsPlugin> initNotificationsPlugin() async {
   final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-  const AndroidInitializationSettings initializationSettingsAndroid =
-  AndroidInitializationSettings('@mipmap/ic_launcher_foreground');
-  final InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid);
+  const initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher_foreground');
+  final initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
   await flutterLocalNotificationsPlugin.initialize(
     initializationSettings,
     onSelectNotification: selectNotification,
   );
+  return flutterLocalNotificationsPlugin;
+}
 
+NotificationDetails getNotificationsSpecifics() {
   const androidPlatformChannelSpecifics = AndroidNotificationDetails(
-    channel,
-    channel_name,
-    channel_description,
-    importance: Importance.low,
-    priority: Priority.defaultPriority,
-    showWhen: false,
-    ongoing: true,
-    enableVibration: false,
-    visibility: NotificationVisibility.public,
-    largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher_foreground')
+      channel,
+      channel_name,
+      channel_description,
+      importance: Importance.low,
+      priority: Priority.defaultPriority,
+      showWhen: false,
+      ongoing: true,
+      enableVibration: false,
+      visibility: NotificationVisibility.public,
+      largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher_foreground')
   );
-  const platformChannelSpecifics = NotificationDetails(
-    android: androidPlatformChannelSpecifics,
-  );
-
-  runApp(MyApp(flutterLocalNotificationsPlugin, platformChannelSpecifics));
+  return NotificationDetails(android: androidPlatformChannelSpecifics);
 }
 
 Future selectNotification(String payload) async {
@@ -126,29 +143,29 @@ String stringForProbability(int maxProbability) {
   return "Llueve casi seguro";
 }
 
+void notif(FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin, NotificationDetails platformChannelSpecifics) async {
+  final forecast = await fetchForecast(1);
+  final rainProbabilities = getRainProbabilities(forecast);
+  final maxRainProbability = rainProbabilities.reduce(max);
+  final rainDay = rainProbabilities.indexOf(maxRainProbability);
+
+  await flutterLocalNotificationsPlugin.show(
+    id,
+    stringForDay(rainDay),
+    stringForProbability(maxRainProbability),
+    platformChannelSpecifics,
+  );
+}
+
 class MyApp extends StatelessWidget {
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin;
   final NotificationDetails _platformChannelSpecifics;
 
   const MyApp(this._flutterLocalNotificationsPlugin, this._platformChannelSpecifics);
 
-  void _notif() async {
-    final forecast = await fetchForecast(1);
-    final rainProbabilities = getRainProbabilities(forecast);
-    final maxRainProbability = rainProbabilities.reduce(max);
-    final rainDay = rainProbabilities.indexOf(maxRainProbability);
-
-    await _flutterLocalNotificationsPlugin.show(
-      id,
-      stringForDay(rainDay),
-      stringForProbability(maxRainProbability),
-      _platformChannelSpecifics,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    _notif();
+    notif(_flutterLocalNotificationsPlugin, _platformChannelSpecifics);
 
     return MaterialApp(
       title: 'Predictor de Lluvia',
