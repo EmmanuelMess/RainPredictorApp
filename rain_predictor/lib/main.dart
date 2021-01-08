@@ -1,7 +1,10 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:intl/intl.dart';
 
 import 'package:rain_predictor/forecast.dart';
 
@@ -59,6 +62,63 @@ Future<Forecast> fetchForecast(int days) async {
   }
 }
 
+List<int> getRainProbabilities(Forecast forecast) {
+  final probabitiesPerDay = forecast.forecastData.map(
+          (forecastData) =>
+          [
+            forecastData.earlyMorningProbStart,
+            forecastData.earlyMorningProbEnd,
+            forecastData.morningProbStart,
+            forecastData.morningProbEnd,
+            forecastData.afternoonProbStart,
+            forecastData.afternoonProbEnd,
+            forecastData.nightProbStart,
+            forecastData.nightProbEnd,
+          ]
+              .map((e) => e == null ? -1 : e)
+              .reduce(max)
+  ).toList();
+
+  return probabitiesPerDay;
+}
+
+String stringForDay(int rainDay) {
+  final now = DateTime.now();
+  final dateFormat = DateFormat('EEEE');
+
+  switch(rainDay) {
+    case -1:
+      return "No hay lluvia";
+    case 0:
+      return "Hoy";
+    case 1:
+      return "Mañana";
+    case 2:
+      return "Pasado Mañana";
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+      return dateFormat.format(now.add(Duration(days: rainDay)));
+  }
+}
+
+String stringForProbability(int maxProbability) {
+  if(maxProbability <= 10) {
+    return "No hay lluvia";
+  }
+
+  if(maxProbability <= 40) {
+    return "Lluvia improbable";
+  }
+
+  if(maxProbability <= 70) {
+    return "Lluvia probable";
+  }
+
+  return "Llueve casi seguro";
+}
+
 class MyApp extends StatelessWidget {
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin;
   final NotificationDetails _platformChannelSpecifics;
@@ -67,11 +127,14 @@ class MyApp extends StatelessWidget {
 
   void _notif() async {
     final forecast = await fetchForecast(1);
+    final rainProbabilities = getRainProbabilities(forecast);
+    final maxRainProbability = rainProbabilities.reduce(max);
+    final rainDay = rainProbabilities.indexOf(maxRainProbability);
 
     await _flutterLocalNotificationsPlugin.show(
       id,
-      forecast.updated,
-      'plain body',
+      stringForDay(rainDay),
+      stringForProbability(maxRainProbability),
       _platformChannelSpecifics,
       payload: 'item x',
     );
