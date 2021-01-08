@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import 'package:rain_predictor/forecast.dart';
+
+const FORECAST_URL = "https://ws1.smn.gob.ar/v1/forecast/location/";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +41,24 @@ Future selectNotification(String payload) async {
   }
 }
 
+Future<Forecast> fetchForecast(int days) async {
+  final rosarioId = 2278;
+  final response = await http.get(
+    '$FORECAST_URL$rosarioId',
+    headers: {
+      "Authorization": "JWT eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ3ZWIiLCJzY29wZXMiOiJST0xFX1VTRVJfRk9SRUNBU1QsUk9MRV9VU0VSX0dFT1JFRixST0xFX1VTRVJfSElTVE9SWSxST0xFX1VTRVJfSU1BR0VTLFJPTEVfVVNFUl9NQVAsUk9MRV9VU0VSX1NUQVRJU1RJQ1MsUk9MRV9VU0VSX1dBUk5JTkcsUk9MRV9VU0VSX1dFQVRIRVIiLCJpYXQiOjE2MTAxMTIxMTYsImV4cCI6MTYxMDE5ODUxNn0.fkOYzNVN1KriOKtHnPi0mDKgNmnrj_QdM3vrGytvpFc",
+    }
+  );
+
+  if (response.statusCode == 200) {
+    return Forecast.fromJson(json.decode(response.body));
+  } else {
+    // If the server did not return a 200 OK response,
+    // then throw an exception.
+    throw Exception('Failed to load album');
+  }
+}
+
 class MyApp extends StatelessWidget {
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin;
   final NotificationDetails _platformChannelSpecifics;
@@ -42,9 +66,11 @@ class MyApp extends StatelessWidget {
   const MyApp(this._flutterLocalNotificationsPlugin, this._platformChannelSpecifics);
 
   void _notif() async {
+    final forecast = await fetchForecast(1);
+
     await _flutterLocalNotificationsPlugin.show(
       id,
-      'Llueve el miercoles',
+      forecast.updated,
       'plain body',
       _platformChannelSpecifics,
       payload: 'item x',
