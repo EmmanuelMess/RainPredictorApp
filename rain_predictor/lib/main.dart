@@ -30,6 +30,8 @@ void main() async {
     importance: Importance.low,
     priority: Priority.defaultPriority,
     showWhen: false,
+    ongoing: true,
+    visibility: NotificationVisibility.public,
   );
   const platformChannelSpecifics = NotificationDetails(
     android: androidPlatformChannelSpecifics,
@@ -136,7 +138,6 @@ class MyApp extends StatelessWidget {
       stringForDay(rainDay),
       stringForProbability(maxRainProbability),
       _platformChannelSpecifics,
-      payload: 'item x',
     );
   }
 
