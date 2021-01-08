@@ -147,7 +147,7 @@ class MyApp extends StatelessWidget {
     _notif();
 
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Predictor de Lluvia',
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -167,7 +167,7 @@ class MyApp extends StatelessWidget {
       home: MyHomePage(
           _flutterLocalNotificationsPlugin,
           _platformChannelSpecifics,
-          title: 'Flutter Demo Home Page',
+          title: 'Configuración del Predictor de Lluvia',
       ),
     );
   }
