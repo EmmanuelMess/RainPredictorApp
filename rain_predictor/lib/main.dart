@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/date_symbol_data_file.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:android_alarm_manager/android_alarm_manager.dart';
@@ -39,7 +40,7 @@ void notify() async {
 
 Future<FlutterLocalNotificationsPlugin> initNotificationsPlugin() async {
   final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-  const initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher_foreground');
+  const initializationSettingsAndroid = AndroidInitializationSettings('@drawable/clouds');
   final initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
   await flutterLocalNotificationsPlugin.initialize(
     initializationSettings,
@@ -112,7 +113,7 @@ String stringForDay(int rainDay) {
 
   switch(rainDay) {
     case -1:
-      return "No hay lluvia";
+      return "";
     case 0:
       return "Hoy";
     case 1:
