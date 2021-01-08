@@ -31,6 +31,7 @@ void main() async {
     priority: Priority.defaultPriority,
     showWhen: false,
     ongoing: true,
+    enableVibration: false,
     visibility: NotificationVisibility.public,
   );
   const platformChannelSpecifics = NotificationDetails(
