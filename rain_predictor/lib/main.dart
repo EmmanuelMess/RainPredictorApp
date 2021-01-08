@@ -15,7 +15,7 @@ void main() async {
 
   final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   const AndroidInitializationSettings initializationSettingsAndroid =
-  AndroidInitializationSettings('@mipmap/ic_launcher');
+  AndroidInitializationSettings('@mipmap/ic_launcher_foreground');
   final InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid);
   await flutterLocalNotificationsPlugin.initialize(
@@ -33,6 +33,7 @@ void main() async {
     ongoing: true,
     enableVibration: false,
     visibility: NotificationVisibility.public,
+    largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher_foreground')
   );
   const platformChannelSpecifics = NotificationDetails(
     android: androidPlatformChannelSpecifics,
